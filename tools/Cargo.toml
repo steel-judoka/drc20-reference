@@ -1,0 +1,12 @@
+[package]
+name = "drc20-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dusk-data-driver = { workspace = true }
+drc20-types = { path = "../types", features = ["serde"] }
+
+# Standard tooling
+serde_json = { workspace = true }

@@ -1,0 +1,18 @@
+[package]
+name = "drc20-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+publish = false
+
+[dependencies]
+drc20-types = { path = "../types" }
+
+dusk-core = { workspace = true }
+dusk-vm = { workspace = true }
+
+bytecheck = { workspace = true }
+rkyv = { workspace = true }
+
+rand = "0.8.5"

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DRC20 Management</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">D</div>
+        <div class="brand__stack">
+          <div class="brand__name">DRC20</div>
+          <div class="brand__hint">Reference token panel</div>
+        </div>
+      </div>
+
+      <mochavi-connect-button id="connect"></mochavi-connect-button>
+    </header>
+
+    <main class="app">
+      <section class="card">
+        <div class="card__title">Config</div>
+        <div class="card__sub mono" id="cfg"></div>
+        <div class="row">
+          <button class="btn" id="btn-refresh" type="button">Refresh</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__title">Token</div>
+          <div class="kv">
+            <div class="kv__k">Name</div><div class="kv__v" id="t-name">—</div>
+            <div class="kv__k">Symbol</div><div class="kv__v" id="t-symbol">—</div>
+            <div class="kv__k">Decimals</div><div class="kv__v mono" id="t-decimals">—</div>
+            <div class="kv__k">Total supply</div><div class="kv__v mono" id="t-supply">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">My balance</div>
+          <div class="card__sub mono" id="me">—</div>
+          <div class="kv">
+            <div class="kv__k">Balance</div><div class="kv__v mono" id="me-balance">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__title">Balance lookup</div>
+        <div class="card__sub">Enter an account (base58 for External, 0x… for ContractId).</div>
+        <div class="row">
+          <input class="input mono" id="bal-account" placeholder="base58… or 0x…" />
+          <button class="btn" id="btn-bal" type="button">Query</button>
+        </div>
+        <div class="kv">
+          <div class="kv__k">Balance</div><div class="kv__v mono" id="bal-out">—</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__title">Transfer</div>
+          <div class="row">
+            <input class="input mono" id="tx-to" placeholder="to (base58… or 0x…)" />
+            <input class="input mono" id="tx-value" placeholder="value (u64)" />
+          </div>
+          <div class="row">
+            <button class="btn btn--primary" id="btn-transfer" type="button">Send transfer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Approve</div>
+          <div class="row">
+            <input class="input mono" id="ap-spender" placeholder="spender (base58… or 0x…)" />
+            <input class="input mono" id="ap-value" placeholder="value (u64)" />
+          </div>
+          <div class="row">
+            <button class="btn btn--primary" id="btn-approve" type="button">Send approve</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__title">Allowance lookup</div>
+          <div class="row">
+            <input class="input mono" id="al-owner" placeholder="owner (base58… or 0x…)" />
+            <input class="input mono" id="al-spender" placeholder="spender (base58… or 0x…)" />
+          </div>
+          <div class="row">
+            <button class="btn" id="btn-allowance" type="button">Query allowance</button>
+          </div>
+          <div class="kv">
+            <div class="kv__k">Allowance</div><div class="kv__v mono" id="al-out">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__title">Transfer From</div>
+          <div class="row">
+            <input class="input mono" id="tf-owner" placeholder="owner (base58… or 0x…)" />
+            <input class="input mono" id="tf-to" placeholder="to (base58… or 0x…)" />
+          </div>
+          <div class="row">
+            <input class="input mono" id="tf-value" placeholder="value (u64)" />
+            <button class="btn btn--primary" id="btn-transferfrom" type="button">Send transfer_from</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="snackbar hidden" id="snack"></div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

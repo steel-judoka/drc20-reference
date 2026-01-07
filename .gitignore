@@ -1,0 +1,17 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+web/dist/
+web/.vite/
+
+# WASM outputs
+**/data_driver.wasm
+
+# Local deployment config (do not commit secrets / addresses)
+/init.json
+
+# OS
+.DS_Store

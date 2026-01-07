@@ -1,0 +1,17 @@
+[package]
+name = "drc20-types"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+serde = ["dep:serde", "dusk-core/serde"]
+
+[dependencies]
+dusk-core = { workspace = true }
+bytecheck = { workspace = true }
+rkyv = { workspace = true }
+
+# Enable `serde` derives for JSON tooling in the data-driver.
+# Keep this dependency `no_std` friendly (`alloc`) so the driver can stay `#![no_std]`.
+serde = { workspace = true, optional = true, default-features = false, features = ["derive", "alloc"] }

@@ -1,0 +1,8 @@
+{
+  "initial_balances": [
+    {
+      "account": { "External": "26brdzqNXEG1jTzCubJAPhks18bSSDY4n21ZW6VLYkCv6bBUdBAZZAbn1Coz1LPBYc4uEekBbzFnZvhL9untGCqRamhZS2cBV51fdZog3qkP3NbMEaqgNMcKEahAFV8t2Cke" },
+      "amount": "1000"
+    }
+  ]
+}
