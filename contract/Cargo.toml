@@ -5,8 +5,19 @@ edition.workspace = true
 license.workspace = true
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-dusk-core = { workspace = true, features = ["abi-dlmalloc"] }
+dusk-core = { workspace = true }
+dusk-data-driver = { workspace = true, optional = true }
+dusk-forge = { workspace = true }
 drc20-types = { path = "../types" }
+
+[features]
+contract = ["dusk-core/abi-dlmalloc"]
+data-driver = [
+  "dep:dusk-data-driver",
+  "dusk-data-driver/wasm-export",
+  "drc20-types/serde",
+  "dusk-data-driver/alloc",
+]
 
 [lib]
 crate-type = ["cdylib"]

@@ -1,1 +1,1 @@
-Build the data-driver and copy it here as data_driver.wasm
+Run `make data-driver` to build the data-driver and copy it here as data_driver.wasm.

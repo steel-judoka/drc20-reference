@@ -1,9 +1,10 @@
 CONTRACT := contract
-DRIVER := data-driver
+WEB_DRIVER := web/public/data_driver.wasm
+DD_WASM := $(shell $(MAKE) -s -C $(CONTRACT) echo-dd)
 
-all: ## Build contract WASM + driver WASM (js)
+all: ## Build contract WASM + data-driver WASM
 	$(MAKE) -C $(CONTRACT) wasm-opt
-	$(MAKE) -C $(DRIVER) wasm-js
+	$(MAKE) data-driver
 
 help: ## Display this help screen
 	@grep -h \
@@ -16,11 +17,10 @@ wasm: ## Build the DRC20 contract WASM
 wasm-opt: ## Build + optimize the DRC20 contract WASM
 	$(MAKE) -C $(CONTRACT) wasm-opt
 
-data-driver: ## Build the driver WASM (ffi)
-	$(MAKE) -C $(DRIVER) wasm
-
-data-driver-js: ## Build the driver WASM (ffi + js)
-	$(MAKE) -C $(DRIVER) wasm-js
+data-driver: ## Build the data-driver WASM (alloc enabled) and copy into web/public
+	$(MAKE) -C $(CONTRACT) wasm-dd DD_FEATURE=data-driver
+	@cp "$(DD_WASM)" "$(WEB_DRIVER)"
+	@echo "Copied $(DD_WASM) -> $(WEB_DRIVER)"
 
 test-caller-wasm: ## Build the helper caller contract used by the test-suite
 	$(MAKE) -C tests/caller wasm
@@ -43,4 +43,4 @@ init-args: ## Encode Init JSON to rkyv hex (for deployment constructor args). Us
 	  exit 2; \
 	fi
 
-.PHONY: all help wasm wasm-opt data-driver data-driver-js init-args test-caller-wasm test
+.PHONY: all help wasm wasm-opt data-driver init-args test-caller-wasm test

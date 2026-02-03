@@ -7,6 +7,7 @@ license.workspace = true
 [dependencies]
 dusk-data-driver = { workspace = true }
 drc20-types = { path = "../types", features = ["serde"] }
+time-core = { workspace = true }
 
 # Standard tooling
 serde_json = { workspace = true }

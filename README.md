@@ -9,7 +9,6 @@ A minimal ERC20-like fungible token reference implementation for the DuskDS netw
 
 - `contract/` — the on-chain DRC20 contract (WASM)
 - `types/` — shared types (accounts, call args, events, error strings)
-- `data-driver/` — data-driver compiled to `*_driver_opt.wasm` for browser SDK tooling
 - `web/` — minimal admin/management UI (connect + read + send tx)
 
 ## Interface
@@ -53,18 +52,17 @@ make wasm-opt
 # output: target/wasm32-unknown-unknown/release/drc20_opt.wasm
 ```
 
-### 2) Build the data-driver WASM (browser)
+### 2) Build the data-driver WASM (off-chain)
+
+The data-driver is auto-generated from the contract via Dusk Forge (no separate
+`data-driver/` crate) and can be used by any runtime that supports WASM.
 
 ```bash
-make data-driver-js
-# output: target/wasm32-unknown-unknown/release/drc20_driver_opt.wasm
+make data-driver
+# output: target/data-driver/wasm32-unknown-unknown/release/drc20_opt.wasm
 ```
 
-Copy it into the web app:
-
-```bash
-cp target/wasm32-unknown-unknown/release/drc20_driver_opt.wasm web/public/data_driver.wasm
-```
+This command also copies the WASM into `web/public/data_driver.wasm`.
 
 ### 3) Run the web management UI
 
@@ -129,7 +127,8 @@ make init-args FILE=./init.json
 
 Deploy using your preferred tooling (e.g. `rusk-wallet contract-deploy`).
 
-If you deploy without constructor args, the contract will initialize with an empty distribution (total supply = 0).
+Deploy tooling must pass constructor args. To deploy with zero supply, use an
+empty `initial_balances` list in `Init`.
 
 ## Tests
 
