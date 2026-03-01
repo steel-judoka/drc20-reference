@@ -24,6 +24,7 @@ pub use calls::{
     InitBalance,
     TransferCall,
     TransferFromCall,
+    PermitCall,
 };
 
 use dusk_core::abi::ContractId;

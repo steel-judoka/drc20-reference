@@ -23,6 +23,9 @@ extern crate alloc;
 mod drc20 {
     use alloc::collections::BTreeMap;
     use alloc::string::String;
+    use alloc::vec::Vec;
+    use dusk_core::BlsScalar;
+    use dusk_core::signatures::bls::PublicKey as BlsPublicKey;
 
     use dusk_core::abi;
 
@@ -37,6 +40,7 @@ mod drc20 {
         TransferCall,
         TransferFromCall,
         ZERO_ADDRESS,
+        PermitCall,
     };
 
     /// DRC20 contract state.
@@ -45,6 +49,7 @@ mod drc20 {
         balances: BTreeMap<Account, u64>,
         allowances: BTreeMap<Account, BTreeMap<Account, u64>>,
         supply: u64,
+        permit_nonces: BTreeMap<Account, u64>,
     }
 
     impl Drc20 {
@@ -55,6 +60,7 @@ mod drc20 {
                 balances: BTreeMap::new(),
                 allowances: BTreeMap::new(),
                 supply: 0,
+                permit_nonces: BTreeMap::new(),
             }
         }
 
@@ -136,6 +142,37 @@ mod drc20 {
         }
 
         // --- State changes ---
+
+        pub fn permit(&mut self, args: PermitCall) {
+            // Check expiry
+            // TODO: move hardcoded message to error module
+            assert!(abi::block_height() <= args.deadline, "permit expired");
+
+            let owner_account = Account::External(args.owner);
+
+            let nonce = self.permit_nonces.get(&owner_account).copied().unwrap_or(0);
+
+            let digest = build_permit_digest(
+                &domain_separator(),
+                &args.owner,
+                &args.spender,
+                args.value,
+                nonce,
+                args.deadline,
+            );
+
+            assert!(abi::verify_bls(digest, args.owner, args.signature), "invalid permit signature");
+
+            self.allowances.entry(owner_account).or_default().insert(args.spender, args.value);
+
+            self.permit_noonces.insert(owner_account, nonce + 1);
+
+            abi::emit(events::Approval::TOPIC, events::Approval {
+                owner: owner_account,
+                spender: args.spender,
+                value: args.value,
+            });
+        }
 
         /// Transfer from caller.
         pub fn transfer(&mut self, args: TransferCall) {
@@ -225,5 +262,31 @@ mod drc20 {
         } else {
             Account::Contract(abi::caller().expect("missing caller"))
         }
+    }
+
+    fn domain_separator() -> BlsScalar {
+        let mut bytes = Vec::new();
+        bytes.extend(abi::self_id().as_bytes());
+        bytes.push(abi::chain_id());
+        bytes.extend(b"DRC20Permit");
+        abi::hash(bytes)
+    }
+
+    fn build_permit_digest(
+        domain_sep: &BlsScalar,
+        owner: &BlsPublicKey,
+        spender: &Account,
+        value: u64,
+        nonce: u64,
+        deadline: u64,
+    ) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.extend(&domain_sep.to_bytes());
+        bytes.extend(&owner.to_raw_bytes());
+        bytes.extend(&spender.to_bytes());
+        bytes.extend(&value.to_le_bytes());
+        bytes.extend(&nonce.to_le_bytes());
+        bytes.extend(&deadline.to_le_bytes());
+        abi::hash(bytes).to_bytes().to_vec()
     }
 }

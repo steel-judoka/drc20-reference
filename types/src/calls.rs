@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 
 use bytecheck::CheckBytes;
+use dusk_core::signatures::bls::{PublicKey as BlsPublicKey, Signature as BlsSignature};
 use rkyv::{Archive, Deserialize, Serialize};
 
 use crate::Account;
@@ -82,4 +83,22 @@ pub struct TransferFromCall {
     /// Amount to transfer.
     #[cfg_attr(feature = "serde", serde(with = "crate::serde_u64"))]
     pub value: u64,
+}
+
+/// Input for `permit(PermitCall)`.
+#[derive(Debug, Clone, PartialEq, Eq, Archive, Serialize, Deserialize)]
+#[archive_attr(derive(CheckBytes))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PermitCall {
+    /// Token owner (signer).
+    pub owner: BlsPublicKey,
+    /// Spender being approved.
+    pub spender: Account,
+    /// Allowance amount.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_u64"))]
+    pub value: u64,
+    /// Block height after which the permit expires.
+    pub deadline: u64,
+    /// BLS signature over the permit digest.
+    pub signature: BlsSignature,
 }
