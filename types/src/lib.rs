@@ -14,6 +14,7 @@ pub mod account;
 pub mod calls;
 pub mod error;
 pub mod events;
+pub mod permit;
 
 pub use account::Account;
 pub use calls::{

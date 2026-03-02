@@ -17,6 +17,8 @@ mod spec {
     use dusk_core::signatures::bls::{
         PublicKey as AccountPublicKey, SecretKey as AccountSecretKey,
     };
+    use dusk_core::BlsScalar;
+    use dusk_vm::host_queries::hash;
     use dusk_vm::ContractData;
 
     use rand::rngs::StdRng;
@@ -25,12 +27,14 @@ mod spec {
     use drc20_types::{
         error,
         events,
+        permit,
         Account,
         Allowance,
         ApproveCall,
         BalanceOf,
         Init,
         InitBalance,
+        PermitCall,
         TransferCall,
         TransferFromCall,
         ZERO_ADDRESS,
@@ -43,6 +47,7 @@ mod spec {
     const TOKEN_ID: ContractId = ContractId::from_bytes([1; 32]);
     const CALLER_ID: ContractId = ContractId::from_bytes([2; 32]);
 
+    const CHAIN_ID: u8 = 0x1;
     const MOONLIGHT_BALANCE: u64 = dusk(1_000.0);
 
     const INITIAL_ALICE: u64 = 1_000;
@@ -290,6 +295,48 @@ mod spec {
 	                .borrow_mut()
                 .icc_transaction(sk, CALLER_ID, "call_transfer", &(token, to, value))
         }
+
+        fn permit(
+            &self,
+            sk: &AccountSecretKey,
+            owner: dusk_core::signatures::bls::PublicKey,
+            spender: Account,
+            value: u64,
+            deadline: u64,
+            signature: dusk_core::signatures::bls::Signature,
+        ) -> Result<dusk_vm::CallReceipt<()>, ContractError> {
+            self.net
+                .borrow_mut()
+                .icc_transaction(
+                    sk,
+                    TOKEN_ID,
+                    "permit",
+                    &PermitCall {
+                        owner,
+                        spender,
+                        value,
+                        deadline,
+                        signature,
+                    },
+                )
+        }
+    }
+
+    fn domain_separator() -> BlsScalar {
+        hash(permit::domain_separator_bytes(&TOKEN_ID, CHAIN_ID))
+    }
+
+    fn build_permit_digest(
+        domain_sep: &BlsScalar,
+        owner: &AccountPublicKey,
+        spender: &Account,
+        value: u64,
+        nonce: u64,
+        deadline: u64,
+    ) -> Vec<u8> {
+        hash(permit::permit_digest_bytes(domain_sep, owner, spender, value, nonce, deadline))
+            .to_bytes()
+            .to_vec()
     }
 
     // ---------------------------------------------------------------------
@@ -535,5 +582,42 @@ mod spec {
             }
         }
         assert!(seen, "expected a transfer event from the caller contract");
+    }
+
+    #[test]
+    fn panic_if_permit_expired() {
+        let ctx = TestContext::new();
+
+        let spender = ctx.bob();
+        let value: u64 = 100;
+        let nonce: u64 = 0;
+        // block height 1 > deadline 0 -> should panic
+        let deadline: u64 = 0;
+
+        let digest = build_permit_digest(
+            &domain_separator(),
+            &ctx.pk_alice,
+            &spender,
+            value,
+            nonce,
+            deadline,
+        );
+
+        let sig = ctx.sk_alice.sign(&digest);
+
+        let receipt = ctx.permit(
+            &ctx.sk_alice,
+            ctx.pk_alice,
+            spender,
+            value,
+            deadline,
+            sig,
+        );
+
+        if let ContractError::Panic(msg) = receipt.unwrap_err() {
+            assert_eq!(msg, "permit expired");
+        } else {
+            panic!("Expected a panic error");
+        }
     }
 }

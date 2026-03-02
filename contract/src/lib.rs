@@ -32,6 +32,7 @@ mod drc20 {
     use drc20_types::{
         error,
         events,
+        permit,
         Account,
         Allowance,
         ApproveCall,
@@ -165,7 +166,7 @@ mod drc20 {
 
             self.allowances.entry(owner_account).or_default().insert(args.spender, args.value);
 
-            self.permit_noonces.insert(owner_account, nonce + 1);
+            self.permit_nonces.insert(owner_account, nonce + 1);
 
             abi::emit(events::Approval::TOPIC, events::Approval {
                 owner: owner_account,
@@ -265,11 +266,7 @@ mod drc20 {
     }
 
     fn domain_separator() -> BlsScalar {
-        let mut bytes = Vec::new();
-        bytes.extend(abi::self_id().as_bytes());
-        bytes.push(abi::chain_id());
-        bytes.extend(b"DRC20Permit");
-        abi::hash(bytes)
+        abi::hash(permit::domain_separator_bytes(&abi::self_id(), abi::chain_id()))
     }
 
     fn build_permit_digest(
@@ -280,13 +277,8 @@ mod drc20 {
         nonce: u64,
         deadline: u64,
     ) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        bytes.extend(&domain_sep.to_bytes());
-        bytes.extend(&owner.to_raw_bytes());
-        bytes.extend(&spender.to_bytes());
-        bytes.extend(&value.to_le_bytes());
-        bytes.extend(&nonce.to_le_bytes());
-        bytes.extend(&deadline.to_le_bytes());
-        abi::hash(bytes).to_bytes().to_vec()
+        abi::hash(permit::permit_digest_bytes(domain_sep, owner, spender, value, nonce, deadline))
+            .to_bytes()
+            .to_vec()
     }
 }
