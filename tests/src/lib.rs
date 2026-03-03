@@ -240,6 +240,22 @@ mod spec {
                 .data
         }
 
+        fn permit_nonces(&self, owner: Account) -> u64 {
+            self.net
+                .borrow_mut()
+                .direct_call::<Account, u64>(TOKEN_ID, "permit_nonces", &owner)
+                .expect("permit_nonces() call should succeed")
+                .data
+        }
+
+        fn contract_domain_separator(&self) -> BlsScalar {
+            self.net
+                .borrow_mut()
+                .direct_call::<(), BlsScalar>(TOKEN_ID, "domain_separator", &())
+                .expect("domain_separator() call should succeed")
+                .data
+        }
+
         // --- State changes ---
 
 	        fn transfer(
@@ -615,9 +631,125 @@ mod spec {
         );
 
         if let ContractError::Panic(msg) = receipt.unwrap_err() {
-            assert_eq!(msg, "permit expired");
+            assert_eq!(msg, error::PERMIT_EXPIRED);
         } else {
             panic!("Expected a panic error");
         }
+    }
+    
+    #[test]
+    fn panic_if_permit_signature_is_invalid() {
+        let ctx = TestContext::new();
+
+        let spender = ctx.bob();
+        let value: u64 = 100;
+        let nonce: u64 = 0;
+        let deadline: u64 = 100;
+
+        let digest = build_permit_digest(
+            &domain_separator(),
+            &ctx.pk_alice,
+            &spender,
+            value,
+            nonce,
+            deadline,
+        );
+
+        // Original digest owner is Alice, but we sign with Bob's key.
+        let sig = ctx.sk_bob.sign(&digest);
+
+        // gas payer can be anyone, we use Alice for simplicity
+        let receipt = ctx.permit(
+            &ctx.sk_alice,
+            ctx.pk_alice,
+            spender,
+            value,
+            deadline,
+            sig,
+        );
+
+        if let ContractError::Panic(msg) = receipt.unwrap_err() {
+            assert_eq!(msg, error::INVALID_PERMIT_SIGNATURE);
+        } else {
+            panic!("Expected a panic error");
+        }
+    }
+
+    #[test]
+    fn permit_works_with_valid_signature() {
+        let ctx = TestContext::new();
+
+        let spender = ctx.bob();
+        let value: u64 = 100;
+        let nonce: u64 = 0;
+        let deadline: u64 = 100;
+
+        let digest = build_permit_digest(
+            &domain_separator(),
+            &ctx.pk_alice,
+            &spender,
+            value,
+            nonce,
+            deadline,
+        );
+
+        let sig = ctx.sk_alice.sign(&digest);
+
+        let receipt = ctx.permit(
+            &ctx.sk_alice,
+            ctx.pk_alice,
+            spender,
+            value,
+            deadline,
+            sig,
+        ).expect("permit should succeed");
+        
+        assert_eq!(ctx.allowance(ctx.alice(), ctx.bob()), value);
+    }
+
+    #[test]
+    fn permit_nonces_is_zero_for_new_owner_and_increments_after_permit() {
+        let ctx = TestContext::new();
+
+        assert_eq!(ctx.permit_nonces(ctx.alice()), 0);
+        assert_eq!(ctx.permit_nonces(ctx.bob()), 0);
+
+        let spender = ctx.bob();
+        let value: u64 = 50;
+        let nonce: u64 = 0;
+        let deadline: u64 = 100;
+
+        let digest = build_permit_digest(
+            &domain_separator(),
+            &ctx.pk_alice,
+            &spender,
+            value,
+            nonce,
+            deadline,
+        );
+        let sig = ctx.sk_alice.sign(&digest);
+
+        ctx.permit(
+            &ctx.sk_alice,
+            ctx.pk_alice,
+            spender,
+            value,
+            deadline,
+            sig,
+        )
+        .expect("permit should succeed");
+
+        assert_eq!(ctx.permit_nonces(ctx.alice()), 1);
+        assert_eq!(ctx.permit_nonces(ctx.bob()), 0);
+    }
+
+    #[test]
+    fn domain_separator_view_matches_expected() {
+        let ctx = TestContext::new();
+
+        let from_contract = ctx.contract_domain_separator();
+        let expected = domain_separator();
+
+        assert_eq!(from_contract.to_bytes(), expected.to_bytes());
     }
 }

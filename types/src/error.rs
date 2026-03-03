@@ -17,3 +17,9 @@ pub const SHIELDED_NOT_SUPPORTED: &str = "DRC20: shielded transactions are not s
 
 /// The reserved `ZERO_ADDRESS` must not be used as a recipient/spender/holder.
 pub const ZERO_ADDRESS_NOT_ALLOWED: &str = "DRC20: zero address not allowed";
+
+/// The permit has expired (current block height exceeds the permit deadline).
+pub const PERMIT_EXPIRED: &str = "DRC20: permit expired";
+
+/// The permit signature is invalid (digest or signer mismatch).
+pub const INVALID_PERMIT_SIGNATURE: &str = "DRC20: invalid permit signature";

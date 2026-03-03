@@ -124,6 +124,16 @@ mod drc20 {
 
         // --- Views ---
 
+        /// Get the nonce for a given owner.
+        pub fn permit_nonces(&self, owner: Account) -> u64 {
+            self.permit_nonces.get(&owner).copied().unwrap_or(0)
+        }
+
+        /// Get the (hashed) domain separator for the contract.
+        pub fn domain_separator() -> BlsScalar {
+            abi::hash(permit::domain_separator_bytes(&abi::self_id(), abi::chain_id()))
+        }
+
         /// Total supply.
         pub fn total_supply(&self) -> u64 {
             self.supply
@@ -145,16 +155,18 @@ mod drc20 {
         // --- State changes ---
 
         pub fn permit(&mut self, args: PermitCall) {
-            // Check expiry
-            // TODO: move hardcoded message to error module
-            assert!(abi::block_height() <= args.deadline, "permit expired");
+            assert!(
+                abi::block_height() <= args.deadline,
+                "{}",
+                error::PERMIT_EXPIRED
+            );
 
             let owner_account = Account::External(args.owner);
 
             let nonce = self.permit_nonces.get(&owner_account).copied().unwrap_or(0);
 
             let digest = build_permit_digest(
-                &domain_separator(),
+                &Self::domain_separator(),
                 &args.owner,
                 &args.spender,
                 args.value,
@@ -162,7 +174,11 @@ mod drc20 {
                 args.deadline,
             );
 
-            assert!(abi::verify_bls(digest, args.owner, args.signature), "invalid permit signature");
+            assert!(
+                abi::verify_bls(digest, args.owner, args.signature),
+                "{}",
+                error::INVALID_PERMIT_SIGNATURE
+            );
 
             self.allowances.entry(owner_account).or_default().insert(args.spender, args.value);
 
@@ -263,10 +279,6 @@ mod drc20 {
         } else {
             Account::Contract(abi::caller().expect("missing caller"))
         }
-    }
-
-    fn domain_separator() -> BlsScalar {
-        abi::hash(permit::domain_separator_bytes(&abi::self_id(), abi::chain_id()))
     }
 
     fn build_permit_digest(

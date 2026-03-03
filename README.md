@@ -21,12 +21,15 @@ A minimal ERC20-like fungible token reference implementation for the DuskDS netw
 - `total_supply() -> u64`
 - `balance_of(BalanceOf) -> u64`
 - `allowance(Allowance) -> u64`
+- `permit_nonces(Owner) -> u64`
+- `domain_separator() -> BlsScalar`
 
 ### State-changing
 
 - `transfer(TransferCall)`
 - `approve(ApproveCall)`
 - `transfer_from(TransferFromCall)`
+- `permit(PermitCall)`
 
 ### Events
 
